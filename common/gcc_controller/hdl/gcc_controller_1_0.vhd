@@ -257,7 +257,7 @@ begin
             when RECEIVED_0x00 =>
                gcc_fsm     <= RESPONSE_0x00_0x09;
                send_byte   <= '1';
-               out_byte    <= x"09";
+               out_byte    <= x"90";
             when RESPONSE_0x00_0x09 =>
                if (send_done = '1') then
                   gcc_fsm     <= RESPONSE_0x00_0x00;
@@ -268,7 +268,7 @@ begin
                if (send_done = '1') then
                   gcc_fsm     <= RESPONSE_0x00_0x03;
                   send_byte   <= '1';
-                  out_byte    <= x"03";
+                  out_byte    <= x"C0";
                end if;
             when RESPONSE_0x00_0x03 =>
                if (send_done = '1') then

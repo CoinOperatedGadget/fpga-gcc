@@ -24,7 +24,7 @@ end entity WS2812B_CONTROLLER_1_0;
 
 architecture WS2812B_CONTROLLER_1_0_ARCH of WS2812B_CONTROLLER_1_0 is
    -- Goes "BBRRGG"
-   constant C_RGB_VALUE : std_logic_vector(23 downto 0) := x"FF00FF";
+   constant C_RGB_VALUE : std_logic_vector(23 downto 0) := x"E000E0";
    
    signal rgb_counter : unsigned(23 downto 0);
    signal rgb_value   : unsigned(23 downto 0);

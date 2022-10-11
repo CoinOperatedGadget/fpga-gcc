@@ -2,7 +2,7 @@
 -- Title         : FPGA GCC Tang Nano 4k Top Level
 -- Author        : Gadget
 -------------------------------------------------------------------------------
--- Description   : 
+-- Description   :
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -17,75 +17,96 @@ entity TOP_LEVEL is
       I_CLK_27_MHZ               : in  std_logic;
       I_RST_N                    : in  std_logic;
       IO_CONTROL                 : inout std_logic;
-      I_START_BUTTON             : in  std_logic;
-      I_A_BUTTON                 : in  std_logic;
-      I_B_BUTTON                 : in  std_logic;
-      I_X_BUTTON                 : in  std_logic;
-      I_Y_BUTTON                 : in  std_logic;
-      I_Z_BUTTON                 : in  std_logic;
-      I_L_BUTTON                 : in  std_logic;
-      I_R_BUTTON                 : in  std_logic;
-      I_D_PAD_UP                 : in  std_logic;
-      I_D_PAD_DOWN               : in  std_logic;
-      I_D_PAD_LEFT               : in  std_logic;
-      I_D_PAD_RIGHT              : in  std_logic;
-      I_LEFT_STICK_UP            : in  std_logic;
-      I_LEFT_STICK_DOWN          : in  std_logic;
-      I_LEFT_STICK_LEFT          : in  std_logic;
-      I_LEFT_STICK_RIGHT         : in  std_logic;
-      I_C_STICK_UP               : in  std_logic;
-      I_C_STICK_DOWN             : in  std_logic;
-      I_C_STICK_LEFT             : in  std_logic;
-      I_C_STICK_RIGHT            : in  std_logic;
+      I_CENTER                   : in  std_logic;
+      I_RIGHT_CLUSTER            : in  std_logic_vector(7 downto 0);
+      I_RIGHT_THUMB_UP           : in  std_logic;
+      I_RIGHT_THUMB_DOWN         : in  std_logic;
+      I_RIGHT_THUMB_LEFT         : in  std_logic;
+      I_RIGHT_THUMB_RIGHT        : in  std_logic;
+      I_RIGHT_THUMB_CENTER       : in  std_logic;
+      I_WASD_MOD                 : in  std_logic;
+      I_WASD_UP                  : in  std_logic;
+      I_WASD_DOWN                : in  std_logic;
+      I_WASD_LEFT                : in  std_logic;
+      I_WASD_RIGHT               : in  std_logic;
+      I_LEFT_THUMB_MOD_0         : in  std_logic;
+      I_LEFT_THUMB_MOD_1         : in  std_logic;
       O_LED_CONTROL              : out std_logic;
+      O_USB_DP                   : out std_logic;
+      O_USB_DM                   : out std_logic;
       O_LED                      : out std_logic
    );
 end entity TOP_LEVEL;
 
 architecture TOP_LEVEL_ARCH of TOP_LEVEL is
 
-   constant C_LED_COUNT_INTERVAL : positive := 12000000;
-   signal led_count              : unsigned(31 downto 0);
-   signal clk_12                 : std_logic;
-   signal clk_27_bufg            : std_logic;
-   signal rst_125_d0             : std_logic;
-   signal rst_125_d1             : std_logic;
-   signal rst_125                : std_logic;
+   constant C_LED_COUNT_INTERVAL    : positive := 12000000;
+   signal led_count                 : unsigned(31 downto 0);
+   signal clk_12                    : std_logic;
+   signal clk_27_bufg               : std_logic;
+   signal rst_125_d0                : std_logic;
+   signal rst_125_d1                : std_logic;
+   signal rst_125                   : std_logic;
 
-   signal gcc_control_in_prereg         : std_logic;
-   signal gcc_control_in         : std_logic;
-   signal gcc_control_out        : std_logic;
-   signal gcc_control_out_en     : std_logic;
-   signal gcc_control_out_prereg        : std_logic;
-   signal gcc_control_out_en_prereg     : std_logic;
+   signal gcc_control_in_prereg     : std_logic;
+   signal gcc_control_in            : std_logic;
+   signal gcc_control_out           : std_logic;
+   signal gcc_control_out_en        : std_logic;
+   signal gcc_control_out_prereg    : std_logic;
+   signal gcc_control_out_en_prereg : std_logic;
 
-   signal start_button           : std_logic;
-   signal a_button               : std_logic;
-   signal b_button               : std_logic;
-   signal x_button               : std_logic;
-   signal y_button               : std_logic;
-   signal z_button               : std_logic;
-   signal l_button               : std_logic;
-   signal r_button               : std_logic;
-   signal d_pad_up               : std_logic;
-   signal d_pad_down             : std_logic;
-   signal d_pad_left             : std_logic;
-   signal d_pad_right            : std_logic;
-   signal left_stick_up          : std_logic;
-   signal left_stick_down        : std_logic;
-   signal left_stick_left        : std_logic;
-   signal left_stick_right       : std_logic;
-   signal c_stick_up             : std_logic;
-   signal c_stick_down           : std_logic;
-   signal c_stick_left           : std_logic;
-   signal c_stick_right          : std_logic;
-   
-   signal left_stick_x           : std_logic_vector(7 downto 0);
-   signal left_stick_y           : std_logic_vector(7 downto 0);
+   signal input_center              : std_logic;
+   signal input_right_cluster_0     : std_logic;
+   signal input_right_cluster_1     : std_logic;
+   signal input_right_cluster_2     : std_logic;
+   signal input_right_cluster_3     : std_logic;
+   signal input_right_cluster_4     : std_logic;
+   signal input_right_cluster_5     : std_logic;
+   signal input_right_cluster_6     : std_logic;
+   signal input_right_cluster_7     : std_logic;
+   signal input_right_thumb_up      : std_logic;
+   signal input_right_thumb_down    : std_logic;
+   signal input_right_thumb_left    : std_logic;
+   signal input_right_thumb_right   : std_logic;
+   signal input_right_thumb_center  : std_logic;
+   signal input_wasd_mod            : std_logic;
+   signal input_wasd_up             : std_logic;
+   signal input_wasd_down           : std_logic;
+   signal input_wasd_left           : std_logic;
+   signal input_wasd_right          : std_logic;
+   signal input_left_thumb_mod_0    : std_logic;
+   signal input_left_thumb_mod_1    : std_logic;
 
-   signal gcc_control            : std_logic;
-   
-   signal led_control            : std_logic;
+   signal a_button                  : std_logic;
+   signal b_button                  : std_logic;
+   signal x_button                  : std_logic;
+   signal y_button                  : std_logic;
+   signal l_button                  : std_logic;
+   signal r_button                  : std_logic;
+   signal z_button                  : std_logic;
+   signal start_button              : std_logic;
+   signal left_stick_up             : std_logic;
+   signal left_stick_down           : std_logic;
+   signal left_stick_left           : std_logic;
+   signal left_stick_right          : std_logic;
+   signal c_stick_up                : std_logic;
+   signal c_stick_down              : std_logic;
+   signal c_stick_left              : std_logic;
+   signal c_stick_right             : std_logic;
+   signal mod_tilt                  : std_logic;
+   signal mod_x                     : std_logic;
+   signal mod_y                     : std_logic;
+   signal mod_trig_0                : std_logic;
+   signal mod_trig_1                : std_logic;
+
+   signal left_stick_x              : std_logic_vector(7 downto 0);
+   signal left_stick_y              : std_logic_vector(7 downto 0);
+   signal c_stick_x                 : std_logic_vector(7 downto 0);
+   signal c_stick_y                 : std_logic_vector(7 downto 0);
+
+   signal gcc_control               : std_logic;
+
+   signal led_control               : std_logic;
 
    component Gowin_EMPU_Top
       port (
@@ -165,99 +186,152 @@ begin
          oen   => not gcc_control_out_en
       );
 
-   Register_Inputs : process(clk_12)
-   begin
-      if rising_edge(clk_12) then
-         start_button      <= I_START_BUTTON;
-         a_button          <= I_A_BUTTON;
-         -- b_button          <= I_B_BUTTON;
-         b_button          <= I_LEFT_STICK_RIGHT;
-         x_button          <= I_X_BUTTON;
-         y_button          <= I_Y_BUTTON;
-         z_button          <= I_Z_BUTTON;
-         l_button          <= I_L_BUTTON;
-         r_button          <= I_R_BUTTON;
-         d_pad_up          <= I_D_PAD_UP;
-         d_pad_down        <= I_D_PAD_DOWN;
-         d_pad_left        <= I_D_PAD_LEFT;
-         d_pad_right       <= I_D_PAD_RIGHT;
-         left_stick_up     <= I_LEFT_STICK_UP;
-         left_stick_down   <= I_LEFT_STICK_DOWN;
-         left_stick_left   <= I_LEFT_STICK_LEFT;
-         -- left_stick_right  <= I_LEFT_STICK_RIGHT;
-         left_stick_right  <= I_B_BUTTON;
-         c_stick_up        <= I_C_STICK_UP;
-         c_stick_down      <= I_C_STICK_DOWN;
-         c_stick_left      <= I_C_STICK_LEFT;
-         c_stick_right     <= I_C_STICK_RIGHT;
-         gcc_control_in    <= gcc_control_in_prereg;
-         gcc_control_out   <= gcc_control_out_prereg;
-         gcc_control_out_en   <= gcc_control_out_en_prereg;
-         O_LED_CONTROL     <= led_control;
-      end if;
-   end process Register_Inputs;
-   
+   Input_Handler : entity work.INPUT_HANDLER_1_0
+      port map(
+         I_CLK                      => clk_12,
+         I_RST                      => not I_RST_N,
+
+         I_CENTER_BUTTON            => I_CENTER,
+
+         I_RIGHT_THUMB_UP           => I_RIGHT_THUMB_UP,
+         I_RIGHT_THUMB_DOWN         => I_RIGHT_THUMB_DOWN,
+         I_RIGHT_THUMB_LEFT         => I_RIGHT_THUMB_LEFT,
+         I_RIGHT_THUMB_RIGHT        => I_RIGHT_THUMB_RIGHT,
+         I_RIGHT_THUMB_CENTER       => I_RIGHT_THUMB_CENTER,
+
+         I_WASD_MOD                 => I_WASD_MOD,
+         I_WASD_UP                  => I_WASD_UP,
+         I_WASD_DOWN                => I_WASD_DOWN,
+         I_WASD_LEFT                => I_WASD_LEFT,
+         I_WASD_RIGHT               => I_WASD_RIGHT,
+
+         I_LEFT_THUMB_MOD_0         => I_LEFT_THUMB_MOD_0,
+         I_LEFT_THUMB_MOD_1         => I_LEFT_THUMB_MOD_1,
+
+         I_RIGHT_CLUSTER            => I_RIGHT_CLUSTER,
+
+         O_A_BUTTON                 => a_button,
+         O_B_BUTTON                 => b_button,
+         O_X_BUTTON                 => x_button,
+         O_Y_BUTTON                 => y_button,
+
+         O_L_BUTTON                 => l_button,
+         O_R_BUTTON                 => r_button,
+         O_Z_BUTTON                 => z_button,
+
+         O_START_BUTTON             => start_button,
+
+         O_LEFT_STICK_UP            => left_stick_up,
+         O_LEFT_STICK_DOWN          => left_stick_down,
+         O_LEFT_STICK_LEFT          => left_stick_left,
+         O_LEFT_STICK_RIGHT         => left_stick_right,
+
+         O_C_STICK_UP               => c_stick_up,
+         O_C_STICK_DOWN             => c_stick_down,
+         O_C_STICK_LEFT             => c_stick_left,
+         O_C_STICK_RIGHT            => c_stick_right,
+
+         O_MOD_TILT                 => mod_tilt,
+         O_MOD_X                    => mod_x,
+         O_MOD_Y                    => mod_y,
+         O_MOD_TRIG_0               => mod_trig_0,
+         O_MOD_TRIG_1               => mod_trig_1,
+
+         O_CONFIGURE_LEDS           => open
+      );
+
    Left_Stick_Handler : entity work.STICK_HANDLER_1_0
-   port map(
-      I_CLK                      => clk_12,
-      I_RST                      => not I_RST_N,
-      I_UP                       => not left_stick_up   ,
-      I_DOWN                     => not left_stick_down ,
-      I_LEFT                     => not left_stick_left ,
-      I_RIGHT                    => not left_stick_right,
-      I_TILT_MODIFIER            => '0',
-      I_X_MODIFIER               => '0',
-      I_Y_MODIFIER               => '0',
-      I_UP_MOD                   => '0',
-      I_DOWN_MOD                 => '0',
-      I_LEFT_MOD                 => '0',
-      I_RIGHT_MOD                => '0',
-      O_STICK_X                  => left_stick_x,
-      O_STICK_Y                  => left_stick_y
-   );
+      port map(
+         I_CLK                      => clk_12,
+         I_RST                      => not I_RST_N,
+         I_UP                       => not left_stick_up   ,
+         I_DOWN                     => not left_stick_down ,
+         I_LEFT                     => not left_stick_left ,
+         I_RIGHT                    => not left_stick_right,
+         I_TILT_MODIFIER            => not mod_tilt,
+         I_X_MODIFIER               => '0',
+         I_Y_MODIFIER               => '0',
+         I_UP_MOD                   => '0',
+         I_DOWN_MOD                 => '0',
+         I_LEFT_MOD                 => '0',
+         I_RIGHT_MOD                => '0',
+         O_STICK_X                  => left_stick_x,
+         O_STICK_Y                  => left_stick_y
+      );
+
+   C_Stick_Handler : entity work.STICK_HANDLER_1_0
+      port map(
+         I_CLK                      => clk_12,
+         I_RST                      => not I_RST_N,
+         I_UP                       => not c_stick_up   ,
+         I_DOWN                     => not c_stick_down ,
+         I_LEFT                     => not c_stick_left ,
+         I_RIGHT                    => not c_stick_right,
+         I_TILT_MODIFIER            => '0',
+         I_X_MODIFIER               => '0',
+         I_Y_MODIFIER               => '0',
+         I_UP_MOD                   => '0',
+         I_DOWN_MOD                 => '0',
+         I_LEFT_MOD                 => '0',
+         I_RIGHT_MOD                => '0',
+         O_STICK_X                  => c_stick_x,
+         O_STICK_Y                  => c_stick_y
+      );
 
    Gcc_Controller : entity work.GCC_CONTROLLER_1_0
-   generic map(
-      G_CYCLES_PER_US            => 12
-      -- G_CYCLE_SLOP               : positive        := G_CYCLES_PER_US/4
-   )
-   port map(
-      I_CLK                      => clk_12,
-      I_RST                      => not I_RST_N,
-      I_START_BUTTON             => not start_button,
-      I_A_BUTTON                 => not a_button,
-      I_B_BUTTON                 => not b_button,
-      I_X_BUTTON                 => not x_button,
-      I_Y_BUTTON                 => not y_button,
-      I_Z_BUTTON                 => not z_button,
-      I_L_BUTTON                 => not l_button,
-      I_R_BUTTON                 => not r_button,
-      I_D_PAD_UP                 => not d_pad_up,
-      I_D_PAD_DOWN               => not d_pad_down,
-      I_D_PAD_LEFT               => not d_pad_left,
-      I_D_PAD_RIGHT              => not d_pad_right,
-      I_RIGHT_STICK_X            => x"80",
-      I_RIGHT_STICK_Y            => x"80",
-      I_LEFT_STICK_X             => left_stick_x,
-      I_LEFT_STICK_Y             => left_stick_y,
-      I_L_ANALOGUE               => (others => '0'),
-      I_R_ANALOGUE               => (others => '0'),
-      O_RUMBLE                   => open,
-      I_CONTROL                  => gcc_control_in,
-      O_CONTROL                  => gcc_control_out_prereg,
-      O_VALID                    => gcc_control_out_en_prereg
-   );
-   
-   LED_Controller : entity work.WS2812B_CONTROLLER_1_0
       generic map(
-         G_CYCLES_PER_0_4_US        => 5,
-         G_NUM_LEDS                 => 2
+         G_CYCLES_PER_US            => 12
+         -- G_CYCLE_SLOP               : positive        := G_CYCLES_PER_US/4
       )
       port map(
          I_CLK                      => clk_12,
          I_RST                      => not I_RST_N,
-         I_GO                       => not a_button,
+         I_START_BUTTON             => not start_button,
+         I_A_BUTTON                 => not a_button,
+         I_B_BUTTON                 => not b_button,
+         I_X_BUTTON                 => not x_button,
+         I_Y_BUTTON                 => not y_button,
+         I_Z_BUTTON                 => not z_button,
+         I_L_BUTTON                 => not l_button,
+         I_R_BUTTON                 => not r_button,
+         I_D_PAD_UP                 => '0',
+         I_D_PAD_DOWN               => '0',
+         I_D_PAD_LEFT               => '0',
+         I_D_PAD_RIGHT              => '0',
+         I_RIGHT_STICK_X            => c_stick_x,
+         I_RIGHT_STICK_Y            => c_stick_y,
+         I_LEFT_STICK_X             => left_stick_x,
+         I_LEFT_STICK_Y             => left_stick_y,
+         I_L_ANALOGUE               => (others => not l_button),
+         I_R_ANALOGUE               => (others => not r_button),
+         O_RUMBLE                   => open,
+         I_CONTROL                  => gcc_control_in,
+         O_CONTROL                  => gcc_control_out_prereg,
+         O_VALID                    => gcc_control_out_en_prereg
+      );
+
+   LED_Controller : entity work.WS2812B_CONTROLLER_1_0
+      generic map(
+         G_CYCLES_PER_0_4_US        => 4,
+         G_NUM_LEDS                 => 21
+      )
+      port map(
+         I_CLK                      => clk_12,
+         I_RST                      => not I_RST_N,
+         I_GO                       => not start_button,
          O_CONTROL                  => led_control
       );
+
+   Register_Outputs : process(clk_12)
+   begin
+      if rising_edge(clk_12) then
+         -- Outputs
+         gcc_control_in       <= gcc_control_in_prereg;
+         gcc_control_out      <= gcc_control_out_prereg;
+         gcc_control_out_en   <= gcc_control_out_en_prereg;
+         O_LED_CONTROL        <= led_control;
+      end if;
+   end process Register_Outputs;
+
 
 end architecture TOP_LEVEL_ARCH;

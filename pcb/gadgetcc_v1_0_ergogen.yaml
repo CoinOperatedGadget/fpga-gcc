@@ -1,0 +1,266 @@
+points:
+  key:
+    tags:
+      1u: true
+    footprints:
+      mx_hotswap:
+        type: mx
+        nets:
+          from: =column_net
+          to: GND
+        params:
+          keycaps: true
+          reverse: false
+          hotswap: true
+      rgb:
+        type: sk6812minie
+        nets:
+          din: =din_net
+          dout: =dout_net
+        params:
+          side: B
+        anchor:
+          shift: [0, -6]
+
+  zones:
+
+    wasd:
+      columns:
+        pinky:
+          rows:
+            home:
+              column_net: P30
+              din_net: S1
+              dout_net: S2
+        ring:
+          rotate: -20
+          origin: [0, -32]
+          rows:
+            home:
+              column_net: P29
+              din_net: S2
+              dout_net: S3
+        middle:
+          rows:
+            home:
+              column_net: P27
+              din_net: S3
+              dout_net: S4
+            top:
+              skip: false
+              column_net: P28
+              din_net: P41
+              dout_net: S1
+        index:
+          rows:
+            home:
+              column_net: P23
+              din_net: S4
+              dout_net: S5
+      rows:
+        home:
+        top:
+          skip: true
+
+    leftthumb:
+      anchor:
+        ref: wasd_index_home
+        shift: [20, -40]
+      columns:
+        near:
+          rows:
+            thumb:
+              column_net: P31
+              din_net: S5
+              dout_net: S6
+        home:
+          rows:
+            thumb:
+              column_net: P32
+              din_net: S6
+              dout_net: S7
+      rows:
+        thumb:
+
+    rightcluster:
+      anchor:
+        ref: wasd_pinky_home
+        shift: [200,-20]
+      columns:
+        pointer:
+          rows:
+            home:
+              column_net: P20
+              din_net: S13
+              dout_net: S14
+            top:
+              column_net: P13
+              din_net: S17
+              dout_net: S18
+        middle:
+          stagger: 10
+          rows:
+            home:
+              column_net: P19
+              din_net: S14
+              dout_net: S15
+            top:
+              column_net: P16
+              din_net: S18
+              dout_net: S19
+        ring:
+          rows:
+            home:
+              column_net: P18
+              din_net: S15
+              dout_net: S16
+            top:
+              column_net: P33
+              din_net: S19
+              dout_net: S20
+        pinky:
+          rows:
+            home:
+              column_net: P17
+              din_net: S16
+              dout_net: S17
+            top:
+              column_net: P15
+              din_net: S20
+              dout_net: NC
+      rows:
+        home:
+        top:
+
+    rightthumb:
+      anchor:
+        ref: rightcluster_pointer_home
+        shift: [-40,-60]
+        rotate: 20
+      columns:
+        c0:
+          rows:
+            top:
+              skip: true
+            home:
+              column_net: P34
+              din_net: S8
+              dout_net: S9
+        c1:
+          rows:
+            home:
+              column_net: P35
+              din_net: S9
+              dout_net: S10
+            top:
+              column_net: P22
+              din_net: S11
+              dout_net: S12
+        c2:
+          rows:
+            home:
+              column_net: P39
+              din_net: S10
+              dout_net: S11
+            top:
+              column_net: P21
+              din_net: S12
+              dout_net: S13
+      rows:
+        home:
+        top:
+          shift: [-10,0]
+
+    startbutton:
+      anchor:
+        ref: wasd_pinky_home
+        shift: [130,-20]
+      rows:
+        home:
+          column_net: P14
+          din_net: S7
+          dout_net: S8
+
+  rotate: 0
+
+outlines:
+  exports:
+    raw: 
+      - type: keys
+        side: left
+        size: [u , u]
+      - type: rectangle
+        size: [290, 120]
+        anchor:
+          ref: wasd_pinky_home
+          rotate: 0
+          shift: [-15, -95]
+    cutout:
+      - type: outline
+        name: raw
+        fillet: 2
+    keycap_outlines:
+      - type: keys
+        side: left
+        size: [1u-1, 1u-1] # Choc keycaps are 17.5 x 16.5
+        bound: false    
+        tags: [1u]         
+    preview:
+        [keycap_outlines]
+    final:
+        - cutout
+        - type: keys
+          side: both
+          size: 14
+          operation: subtract
+
+pcbs:
+  gadgetcc:
+    outlines:
+      board:
+        outline: cutout
+      keycaps:
+        outline: preview
+        layer: Eco1.User
+    footprints:
+      tangnano4k:
+        type: tangnano4k
+        anchor:
+          ref: wasd_pinky_home
+          shift: [142, 9]
+          rotate: -90
+      gcc_breakout:
+        type: breakout1x6
+        anchor:
+          ref: wasd_pinky_home
+          shift: [150, 9]
+          rotate: -90
+        nets:
+          P1: VCC
+          P2: GND
+          P3: gccp3
+          P4: gccp4
+          P5: P44
+          P6: gccp5
+      usb_breakout:
+        type: breakout1x6
+        anchor:
+          ref: wasd_pinky_home
+          shift: [180, 9]
+          rotate: -90
+        nets:
+          P1: VCC
+          P2: GND
+          P3: usb_cc1
+          P4: P42
+          P5: P43
+          P6: usb_cc2
+          
+cases:
+  simple:
+        - type: outline # default option
+          name: final
+          extrude: 1.5 # default = 1
+          shift: [0, 0, 0] # default = [0, 0, 0]
+          rotate: [0, 0, 0] # default = [0, 0, 0]
+          operation: add # | subtract | intersect # default = add
