@@ -18,13 +18,16 @@ entity WS2812B_CONTROLLER_1_0 is
       I_CLK                      : in  std_logic;
       I_RST                      : in  std_logic;
       I_GO                       : in  std_logic;
+      I_COLOR                    : in  std_logic_vector(23 downto 0);
+      O_LED_NUMBER               : out unsigned(7 downto 0);
+      O_DONE                     : out std_logic;
       O_CONTROL                  : out std_logic
    );
 end entity WS2812B_CONTROLLER_1_0;
 
 architecture WS2812B_CONTROLLER_1_0_ARCH of WS2812B_CONTROLLER_1_0 is
    -- Goes "BBRRGG"
-   constant C_RGB_VALUE : std_logic_vector(23 downto 0) := x"E000E0";
+   constant C_RGB_VALUE : std_logic_vector(23 downto 0) := x"FF00FF";
    
    signal rgb_counter : unsigned(23 downto 0);
    signal rgb_value   : unsigned(23 downto 0);
@@ -43,11 +46,12 @@ begin
    Send_Colors : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
-         rgb_counter <= rgb_counter +1;
-         O_CONTROL   <= '0';
-         last_bit    <= '0';
-         last_led    <= '0';
-         go_d        <= I_GO;
+         O_LED_NUMBER   <= led_count;
+         rgb_counter    <= rgb_counter +1;
+         O_CONTROL      <= '0';
+         last_bit       <= '0';
+         last_led       <= '0';
+         go_d           <= I_GO;
          if (I_GO = '1' and go_d = '0') then
             rgb_value <= rgb_counter;
             send_in_progress <= '1';
@@ -56,13 +60,13 @@ begin
          end if;
          if (send_in_progress = '1') then
             signal_count <= signal_count + 1;
-            if (C_RGB_VALUE(to_integer(bit_count)) = '0') then
+            if (I_COLOR(to_integer(bit_count)) = '0') then
             -- if (rgb_value(to_integer(bit_count)) = '0') then
                if (signal_count < G_CYCLES_PER_0_4_US) then
                   O_CONTROL <= '1';
                end if;
             end if;
-            if (C_RGB_VALUE(to_integer(bit_count)) = '1') then
+            if (I_COLOR(to_integer(bit_count)) = '1') then
             -- if (rgb_value(to_integer(bit_count)) = '1') then
                if (signal_count < G_CYCLES_PER_0_4_US*2) then
                   O_CONTROL <= '1';

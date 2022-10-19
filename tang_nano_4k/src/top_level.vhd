@@ -55,28 +55,23 @@ architecture TOP_LEVEL_ARCH of TOP_LEVEL is
    signal gcc_control_out_prereg    : std_logic;
    signal gcc_control_out_en_prereg : std_logic;
 
-   signal input_center              : std_logic;
-   signal input_right_cluster_0     : std_logic;
-   signal input_right_cluster_1     : std_logic;
-   signal input_right_cluster_2     : std_logic;
-   signal input_right_cluster_3     : std_logic;
-   signal input_right_cluster_4     : std_logic;
-   signal input_right_cluster_5     : std_logic;
-   signal input_right_cluster_6     : std_logic;
-   signal input_right_cluster_7     : std_logic;
-   signal input_right_thumb_up      : std_logic;
-   signal input_right_thumb_down    : std_logic;
-   signal input_right_thumb_left    : std_logic;
-   signal input_right_thumb_right   : std_logic;
-   signal input_right_thumb_center  : std_logic;
-   signal input_wasd_mod            : std_logic;
-   signal input_wasd_up             : std_logic;
-   signal input_wasd_down           : std_logic;
-   signal input_wasd_left           : std_logic;
-   signal input_wasd_right          : std_logic;
-   signal input_left_thumb_mod_0    : std_logic;
-   signal input_left_thumb_mod_1    : std_logic;
+   -- Registered raw button presses
+   signal center_button             : std_logic;
+   signal right_thumb_up            : std_logic;
+   signal right_thumb_down          : std_logic;
+   signal right_thumb_left          : std_logic;
+   signal right_thumb_right         : std_logic;
+   signal right_thumb_center        : std_logic;
+   signal wasd_mod                  : std_logic;
+   signal wasd_up                   : std_logic;
+   signal wasd_down                 : std_logic;
+   signal wasd_left                 : std_logic;
+   signal wasd_right                : std_logic;
+   signal left_thumb_mod_0          : std_logic;
+   signal left_thumb_mod_1          : std_logic;
+   signal right_cluster             : std_logic_vector(7 downto 0);
 
+   -- Muxed buttons
    signal a_button                  : std_logic;
    signal b_button                  : std_logic;
    signal x_button                  : std_logic;
@@ -107,6 +102,9 @@ architecture TOP_LEVEL_ARCH of TOP_LEVEL is
    signal gcc_control               : std_logic;
 
    signal led_control               : std_logic;
+
+   signal configure_leds            : std_logic;
+   signal configure_leds_done       : std_logic;
 
    component Gowin_EMPU_Top
       port (
@@ -210,6 +208,25 @@ begin
 
          I_RIGHT_CLUSTER            => I_RIGHT_CLUSTER,
 
+         O_CENTER_BUTTON            => center_button,
+
+         O_RIGHT_THUMB_UP           => right_thumb_up,
+         O_RIGHT_THUMB_DOWN         => right_thumb_down,
+         O_RIGHT_THUMB_LEFT         => right_thumb_left,
+         O_RIGHT_THUMB_RIGHT        => right_thumb_right,
+         O_RIGHT_THUMB_CENTER       => right_thumb_center,
+
+         O_WASD_MOD                 => wasd_mod,
+         O_WASD_UP                  => wasd_up,
+         O_WASD_DOWN                => wasd_down,
+         O_WASD_LEFT                => wasd_left,
+         O_WASD_RIGHT               => wasd_right,
+
+         O_LEFT_THUMB_MOD_0         => left_thumb_mod_0,
+         O_LEFT_THUMB_MOD_1         => left_thumb_mod_1,
+
+         O_RIGHT_CLUSTER            => right_cluster,
+
          O_A_BUTTON                 => a_button,
          O_B_BUTTON                 => b_button,
          O_X_BUTTON                 => x_button,
@@ -237,7 +254,8 @@ begin
          O_MOD_TRIG_0               => mod_trig_0,
          O_MOD_TRIG_1               => mod_trig_1,
 
-         O_CONFIGURE_LEDS           => open
+         I_CONFIGURE_LEDS_DONE      => configure_leds_done,
+         O_CONFIGURE_LEDS           => configure_leds
       );
 
    Left_Stick_Handler : entity work.STICK_HANDLER_1_0
@@ -286,6 +304,7 @@ begin
       port map(
          I_CLK                      => clk_12,
          I_RST                      => not I_RST_N,
+         I_DISABLE                  => configure_leds,
          I_START_BUTTON             => not start_button,
          I_A_BUTTON                 => not a_button,
          I_B_BUTTON                 => not b_button,
@@ -310,15 +329,45 @@ begin
          O_VALID                    => gcc_control_out_en_prereg
       );
 
-   LED_Controller : entity work.WS2812B_CONTROLLER_1_0
+   -- LED_Controller : entity work.WS2812B_CONTROLLER_1_0
+      -- generic map(
+         -- G_CYCLES_PER_0_4_US        => 4,
+         -- G_NUM_LEDS                 => 21
+      -- )
+      -- port map(
+         -- I_CLK                      => clk_12,
+         -- I_RST                      => not I_RST_N,
+         -- I_GO                       => not start_button,
+         -- O_CONTROL                  => led_control
+      -- );
+
+   LED_Controller : entity work.LED_CONTROLLER_1_0
       generic map(
-         G_CYCLES_PER_0_4_US        => 4,
-         G_NUM_LEDS                 => 21
+         G_CYCLES_PER_1_S           => 48_000_00,
+         G_UPDATE_PERIOD            => 1_2000
       )
       port map(
          I_CLK                      => clk_12,
          I_RST                      => not I_RST_N,
-         I_GO                       => not start_button,
+
+         -- Configuration Ports
+         I_CONFIGURE_MODE           => configure_leds,
+         I_CENTER_BUTTON            => center_button,
+         I_RIGHT_THUMB_UP           => right_thumb_up,
+         I_RIGHT_THUMB_DOWN         => right_thumb_down,
+         I_RIGHT_THUMB_LEFT         => right_thumb_left,
+         I_RIGHT_THUMB_RIGHT        => right_thumb_right, 
+         I_RIGHT_THUMB_CENTER       => right_thumb_center,
+         I_WASD_MOD                 => wasd_mod,
+         I_WASD_UP                  => wasd_up,
+         I_WASD_DOWN                => wasd_down,
+         I_WASD_LEFT                => wasd_left,
+         I_WASD_RIGHT               => wasd_right,
+         I_LEFT_THUMB_MOD_0         => left_thumb_mod_0,
+         I_LEFT_THUMB_MOD_1         => left_thumb_mod_1,
+         I_RIGHT_CLUSTER            => right_cluster,
+         O_CONFIGURE_DONE           => configure_leds_done,
+
          O_CONTROL                  => led_control
       );
 

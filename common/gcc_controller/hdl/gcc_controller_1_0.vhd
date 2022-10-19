@@ -17,6 +17,7 @@ entity GCC_CONTROLLER_1_0 is
    port(
       I_CLK                      : in  std_logic;
       I_RST                      : in  std_logic;
+      I_DISABLE                  : in  std_logic;
       I_START_BUTTON             : in  std_logic;
       I_A_BUTTON                 : in  std_logic;
       I_B_BUTTON                 : in  std_logic;
@@ -229,7 +230,7 @@ begin
                -- Command came in!
                -- NOTE: Normally I don't like doing these compares in the main FSM body, could move
                -- these compares out to a separate process delayed a cycle and moved into flags.
-               if (in_command_valid = '1') then
+               if (in_command_valid = '1' and I_DISABLE = '0') then
                   debug_unspecified_command <= '1';
                   -- Probe command -> All zeroes, the host device is seeing if anyone is home
                   -- Will respond with a static 0x09 -> 0x00 -> 0x03.
