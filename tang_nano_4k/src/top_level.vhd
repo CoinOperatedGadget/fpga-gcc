@@ -140,7 +140,7 @@ begin
 
    -----------------------------------------------------------------------------
    -- Process:       LED_Counter
-   -- Description:
+   -- Description:   Just blinks the onboard Tang Nano 4k LED
    -----------------------------------------------------------------------------
    Led_Counter : process(clk_12)
    begin
@@ -157,25 +157,27 @@ begin
       end if;
    end process Led_Counter;
 
-   -- ARM : Gowin_EMPU_Top
-      -- port map (
-         -- sys_clk => I_CLK_27_MHZ,
-         -- gpio    => open,
-         -- reset_n => I_RST_N
-      -- );
-
+   -----------------------------------------------------------------------------
+   -- Entity:        Sys_Clk_Pll
+   -- Description:   Our clock PLL.  We're currently running things at 12 MHz.
+   --                This is just due to me playing around with some USB
+   --                protocol stuff.  Might speed things up in the future,
+   --                although that isn't really super necessary.
+   -----------------------------------------------------------------------------
    Sys_Clk_Pll : Gowin_PLLVR
       port map (
          clkout => clk_12,
          clkin => clk_27_bufg
       );
 
+   -- Clock buffer, not sure if this is needed if we're going stright into the PLL
    Clock_Buff : BUFG
    port map(
       o => clk_27_bufg,
       i => I_CLK_27_MHZ
    );
 
+   -- IOBUF for the GCC output.
    Gcc_IOBUF : IOBUF
       port map(
          o     => gcc_control_in_prereg,
@@ -184,6 +186,7 @@ begin
          oen   => not gcc_control_out_en
       );
 
+   -- Input handler.  Registers and muxes inputs buttons into GCC buttons.
    Input_Handler : entity work.INPUT_HANDLER_1_0
       port map(
          I_CLK                      => clk_12,
@@ -258,6 +261,7 @@ begin
          O_CONFIGURE_LEDS           => configure_leds
       );
 
+   -- Handles left control stick button to X/Y coordinates
    Left_Stick_Handler : entity work.STICK_HANDLER_1_0
       port map(
          I_CLK                      => clk_12,
@@ -267,16 +271,17 @@ begin
          I_LEFT                     => not left_stick_left ,
          I_RIGHT                    => not left_stick_right,
          I_TILT_MODIFIER            => not mod_tilt,
-         I_X_MODIFIER               => '0',
-         I_Y_MODIFIER               => '0',
-         I_UP_MOD                   => '0',
-         I_DOWN_MOD                 => '0',
-         I_LEFT_MOD                 => '0',
-         I_RIGHT_MOD                => '0',
+         I_X_MODIFIER               => not mod_x,
+         I_Y_MODIFIER               => not mod_y,
+         I_UP_MOD                   => not c_stick_up   ,
+         I_DOWN_MOD                 => not c_stick_down ,
+         I_LEFT_MOD                 => not c_stick_left ,
+         I_RIGHT_MOD                => not c_stick_right,
          O_STICK_X                  => left_stick_x,
          O_STICK_Y                  => left_stick_y
       );
-
+      
+   -- Handles right control stick button to X/Y coordinates
    C_Stick_Handler : entity work.STICK_HANDLER_1_0
       port map(
          I_CLK                      => clk_12,
@@ -296,10 +301,10 @@ begin
          O_STICK_Y                  => c_stick_y
       );
 
+   -- Communicates with gamecube adapter to emulate a GCC.
    Gcc_Controller : entity work.GCC_CONTROLLER_1_0
       generic map(
          G_CYCLES_PER_US            => 12
-         -- G_CYCLE_SLOP               : positive        := G_CYCLES_PER_US/4
       )
       port map(
          I_CLK                      => clk_12,
@@ -329,18 +334,7 @@ begin
          O_VALID                    => gcc_control_out_en_prereg
       );
 
-   -- LED_Controller : entity work.WS2812B_CONTROLLER_1_0
-      -- generic map(
-         -- G_CYCLES_PER_0_4_US        => 4,
-         -- G_NUM_LEDS                 => 21
-      -- )
-      -- port map(
-         -- I_CLK                      => clk_12,
-         -- I_RST                      => not I_RST_N,
-         -- I_GO                       => not start_button,
-         -- O_CONTROL                  => led_control
-      -- );
-
+   -- Controls the board LEDs.  In this case we're using SK6812 mini-e's
    LED_Controller : entity work.LED_CONTROLLER_1_0
       generic map(
          G_CYCLES_PER_1_S           => 48_000_00,
@@ -356,7 +350,7 @@ begin
          I_RIGHT_THUMB_UP           => right_thumb_up,
          I_RIGHT_THUMB_DOWN         => right_thumb_down,
          I_RIGHT_THUMB_LEFT         => right_thumb_left,
-         I_RIGHT_THUMB_RIGHT        => right_thumb_right, 
+         I_RIGHT_THUMB_RIGHT        => right_thumb_right,
          I_RIGHT_THUMB_CENTER       => right_thumb_center,
          I_WASD_MOD                 => wasd_mod,
          I_WASD_UP                  => wasd_up,
@@ -371,6 +365,7 @@ begin
          O_CONTROL                  => led_control
       );
 
+   -- Registering some outputs.
    Register_Outputs : process(clk_12)
    begin
       if rising_edge(clk_12) then
@@ -381,6 +376,5 @@ begin
          O_LED_CONTROL        <= led_control;
       end if;
    end process Register_Outputs;
-
 
 end architecture TOP_LEVEL_ARCH;

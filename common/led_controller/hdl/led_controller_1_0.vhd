@@ -128,30 +128,6 @@ architecture LED_CONTROLLER_1_0_ARCH of LED_CONTROLLER_1_0 is
       C_RIGHT_CLUSTER_7_LED      => x"000000"
       );
 
-   signal led_wr_addr   : unsigned(4 downto 0);
-   signal led_wr        : std_logic;
-   signal led_wr_data   : std_logic_vector(23 downto 0);
-
-   signal led_rd_addr   : unsigned(4 downto 0);
-   signal led_rd_addr_reg   : unsigned(4 downto 0);
-   signal next_color    : std_logic;
-
-   -- Input Regs for buttons
-   signal center_button          : std_logic;
-   signal right_thumb_up         : std_logic;
-   signal right_thumb_down       : std_logic;
-   signal right_thumb_left       : std_logic;
-   signal right_thumb_right      : std_logic;
-   signal right_thumb_center     : std_logic;
-   signal wasd_mod               : std_logic;
-   signal wasd_up                : std_logic;
-   signal wasd_down              : std_logic;
-   signal wasd_left              : std_logic;
-   signal wasd_right             : std_logic;
-   signal left_thumb_mod_0       : std_logic;
-   signal left_thumb_mod_1       : std_logic;
-   signal right_cluster          : std_logic_vector(7 downto 0);
-
    signal led_button_fe          : std_logic_vector(20 downto 0);
 
    signal blink_mode             : std_logic;
@@ -178,71 +154,10 @@ architecture LED_CONTROLLER_1_0_ARCH of LED_CONTROLLER_1_0 is
 
 begin
 
-
-   -- Update_Counter : process(I_CLK)
-   -- begin
-      -- if rising_edge(I_CLK) then
-         -- update_leds <= '0';
-         -- update_count <= update_count+1;
-         -- if (update_count = x"ffff") then
-            -- update_leds <= '1';
-         -- end if;
-      -- end if;
-   -- end process Update_Counter;
-
-   -- Mem_Array_Wr : process(I_CLK)
-   -- begin
-      -- if rising_edge(I_CLK) then
-         -- led_wr      <= I_CONFIGURE_CONFIRM;
-         -- led_wr_addr <= I_CONFIGURE_COLOR_ADDR;
-         -- led_wr_data <= I_CONFIGURE_COLOR;
-         -- if (led_wr = '1') then
-            -- led_array(to_integer(led_wr_addr)) <= led_wr_data;
-         -- end if;
-      -- end if;
-   -- end process Mem_Array_Rd;
-
-   -- Mem_Array_Rd : process(I_CLK)
-   -- begin
-      -- if rising_edge(I_CLK) then
-         -- led_rd_addr_reg <= led_rd_addr;
-         -- led_rd_data <= led_array(to_integer(led_rd_addr_reg));
-         -- if (update_leds = '1') then
-            -- led_rd_addr <= (others => '0');
-         -- end if;
-         -- if (next_color = '1') then
-            -- led_rd_addr <= led_rd_addr + 1;
-         -- end if;
-      -- end if;
-   -- end process Mem_Array_Rd;
-
-   Input_Registers : process(I_CLK)
-   begin
-      if rising_edge(I_CLK) then
-         -- Register Stage
-         center_button        <= I_CENTER_BUTTON;
-         right_thumb_up       <= I_RIGHT_THUMB_UP;
-         right_thumb_down     <= I_RIGHT_THUMB_DOWN;
-         right_thumb_left     <= I_RIGHT_THUMB_LEFT;
-         right_thumb_right    <= I_RIGHT_THUMB_RIGHT;
-         right_thumb_center   <= I_RIGHT_THUMB_CENTER;
-         wasd_mod             <= I_WASD_MOD;
-         wasd_up              <= I_WASD_UP;
-         wasd_down            <= I_WASD_DOWN;
-         wasd_left            <= I_WASD_LEFT;
-         wasd_right           <= I_WASD_RIGHT;
-         left_thumb_mod_0     <= I_LEFT_THUMB_MOD_0;
-         left_thumb_mod_1     <= I_LEFT_THUMB_MOD_1;
-         right_cluster        <= I_RIGHT_CLUSTER;
-      end if;
-   end process Input_Registers;
-
-
    -------------------------------------------------------------------------------
    -- Process     : FSM
-   -- Description : Main FSM of emulator.  Waits in Idle until a command is
-   --               received, then if its a supported command sends a response 1
-   --               byte at a time.
+   -- Description : Main FSM of emulator.  Waits in Idle until configure mode
+   --                is entered.
    -------------------------------------------------------------------------------
    FSM : process(I_CLK)
    begin
@@ -252,25 +167,24 @@ begin
          waiting_for_led_sel     <= '0';
          waiting_for_color_sel   <= '0';
          case led_configure_fsm is
-            -- Idle, we'll probably spend most of our time here waiting for commands.
+            -- Idle, we'll probably spend most of our time here waiting for configure mode.
             when S_IDLE =>
                if (I_CONFIGURE_MODE = '1') then
                   led_configure_fsm <= S_CHOOSE_BUTTON;
                end if;
-
+            -- Here we choose a button to edit
             when S_CHOOSE_BUTTON =>
                blink_mode           <= '1';
                waiting_for_led_sel  <= '1';
                if (led_selected_valid = '1') then
                   led_configure_fsm <= S_CHOOSE_COLOR;
                end if;
-
+            -- Configure color for the button
             when S_CHOOSE_COLOR =>
                waiting_for_color_sel   <= '1';
                if (led_button_fe(C_CENTER_BUTTON_LED) = '1') then
                   led_configure_fsm <= S_END_CONFIGURE;
                end if;
-               
             -- State to wait for configure mode to be disabled in input handler.
             when S_END_CONFIGURE =>
                -- Activate handshake signal
@@ -288,6 +202,11 @@ begin
       end if;
    end process FSM;
 
+   -------------------------------------------------------------------------------
+   -- Process     : Led_Sel_Proc
+   -- Description : When the FSM needs to select an LED, we just wait for the
+   --                first one to be hit and return a flag back that its selected.
+   -------------------------------------------------------------------------------
    Led_Sel_Proc : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
@@ -450,76 +369,11 @@ begin
          O_OUTPUT    => led_button_fe(C_RIGHT_CLUSTER_7_LED)
       );
 
-   -- Falling_Edge_Detects : process(I_CLK)
-   -- begin
-      -- if rising_edge(I_CLK) then
-         -- led_button_fe <= (others => '0');
-         -- if (I_CENTER_BUTTON      = '0' and center_button      = '1') then
-            -- led_button_fe(C_CENTER_BUTTON_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_THUMB_UP     = '0' and right_thumb_up     = '1') then
-            -- led_button_fe(C_RIGHT_THUMB_UP_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_THUMB_DOWN   = '0' and right_thumb_down   = '1') then
-            -- led_button_fe(C_RIGHT_THUMB_DOWN_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_THUMB_LEFT   = '0' and right_thumb_left   = '1') then
-            -- led_button_fe(C_RIGHT_THUMB_LEFT_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_THUMB_RIGHT  = '0' and right_thumb_right  = '1') then
-            -- led_button_fe(C_RIGHT_THUMB_RIGHT_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_THUMB_CENTER = '0' and right_thumb_center = '1') then
-            -- led_button_fe(C_RIGHT_THUMB_CENTER_LED)   <= '1';
-         -- end if;
-         -- if (I_WASD_MOD           = '0' and wasd_mod           = '1') then
-            -- led_button_fe(C_WASD_MOD_LED)   <= '1';
-         -- end if;
-         -- if (I_WASD_UP            = '0' and wasd_up            = '1') then
-            -- led_button_fe(C_WASD_UP_LED)   <= '1';
-         -- end if;
-         -- if (I_WASD_DOWN          = '0' and wasd_down          = '1') then
-            -- led_button_fe(C_WASD_DOWN_LED)   <= '1';
-         -- end if;
-         -- if (I_WASD_LEFT          = '0' and wasd_left          = '1') then
-            -- led_button_fe(C_WASD_LEFT_LED)   <= '1';
-         -- end if;
-         -- if (I_WASD_RIGHT         = '0' and wasd_right         = '1') then
-            -- led_button_fe(C_WASD_RIGHT_LED)   <= '1';
-         -- end if;
-         -- if (I_LEFT_THUMB_MOD_0   = '0' and left_thumb_mod_0   = '1') then
-            -- led_button_fe(C_LEFT_THUMB_MOD_0_LED)   <= '1';
-         -- end if;
-         -- if (I_LEFT_THUMB_MOD_1   = '0' and left_thumb_mod_1   = '1') then
-            -- led_button_fe(C_LEFT_THUMB_MOD_1_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(0)   = '0' and right_cluster(0)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_0_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(1)   = '0' and right_cluster(1)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_1_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(2)   = '0' and right_cluster(2)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_2_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(3)   = '0' and right_cluster(3)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_3_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(4)   = '0' and right_cluster(4)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_4_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(5)   = '0' and right_cluster(5)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_5_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(6)   = '0' and right_cluster(6)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_6_LED)   <= '1';
-         -- end if;
-         -- if (I_RIGHT_CLUSTER(7)   = '0' and right_cluster(7)   = '1') then
-            -- led_button_fe(C_RIGHT_CLUSTER_7_LED)   <= '1';
-         -- end if;
-      -- end if;
-   -- end process Falling_Edge_Detects;
-
+   -------------------------------------------------------------------------------
+   -- Process     : Blinker
+   -- Description : Counter for controlling blink speeds for when we want to blink
+   --                the LEDs.
+   -------------------------------------------------------------------------------
    Blinker : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
@@ -531,6 +385,11 @@ begin
       end if;
    end process Blinker;
 
+   -------------------------------------------------------------------------------
+   -- Process     : Updater
+   -- Description : Counter for how often we want to update the LED colors.
+   --                Only really necessary if we are changing colors.
+   -------------------------------------------------------------------------------
    Updater : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
@@ -543,14 +402,22 @@ begin
       end if;
    end process Updater;
    
+   -------------------------------------------------------------------------------
+   -- Process     : LED_Changer
+   -- Description : When configuring colors this is the logic that controls the
+   --                color change.
+   -------------------------------------------------------------------------------
    LED_Changer : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
+         -- Latch in the original color when we're not in color change state.
          if (waiting_for_color_sel = '0') then
             color_to_change <= led_color_mem(to_integer(unsigned(led_selected)));
          end if;
+         -- This means we're actively changing the color.
          if (waiting_for_color_sel = '1') then
-            led_color_mem(to_integer(unsigned(led_selected))) <= color_to_change;            
+            led_color_mem(to_integer(unsigned(led_selected))) <= color_to_change;
+            -- Each button on the right cluster will be a single bit of the current active color we're editing (RGB)
             for i in 7 downto 0 loop
                if (led_button_fe(i+C_RIGHT_CLUSTER_0_LED) = '1') then
                   if (rgb_sel = C_R_SEL) then
@@ -564,6 +431,7 @@ begin
                   end if;
                end if;
             end loop;
+            -- WASD controls whether we're editing R, G or B
             if (led_button_fe(C_WASD_LEFT_LED) = '1') then
                rgb_sel <= C_R_SEL;
             end if;
@@ -577,6 +445,11 @@ begin
       end if;
    end process LED_Changer;
    
+   -------------------------------------------------------------------------------
+   -- Process     : LED_Mux
+   -- Description : Muxes output so we're outputting the correct color for each
+   --                LED.  Let's us do per key RGB.
+   -------------------------------------------------------------------------------
    LED_Mux : process(I_CLK)
    begin
       if rising_edge(I_CLK) then

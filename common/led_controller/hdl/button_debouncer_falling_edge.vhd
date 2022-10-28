@@ -18,6 +18,7 @@ entity BUTTON_DEBOUNCER_FALLING_EDGE is
 end entity BUTTON_DEBOUNCER_FALLING_EDGE;
 
 architecture BUTTON_DEBOUNCER_FALLING_EDGE_ARCH of BUTTON_DEBOUNCER_FALLING_EDGE is
+   -- This is probably way overkill...  Should look into reducing to save resources.
    constant C_STABLE       : natural := 240000;
 
    signal input_d          : std_logic;
@@ -25,6 +26,10 @@ architecture BUTTON_DEBOUNCER_FALLING_EDGE_ARCH of BUTTON_DEBOUNCER_FALLING_EDGE
 
 begin
 
+   -------------------------------------------------------------------------------
+   -- Process     : Debounce
+   -- Description : Delay based debouncing process.
+   -------------------------------------------------------------------------------
    Debounce : process(I_CLK)
    begin
       if rising_edge(I_CLK) then

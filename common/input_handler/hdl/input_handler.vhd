@@ -148,7 +148,7 @@ architecture INPUT_HANDLER_1_0_ARCH of INPUT_HANDLER_1_0 is
       C_Y_BUTTON           => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_5   , C_INPUT_ARRAY_SIZE)),
       C_L_BUTTON           => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_6   , C_INPUT_ARRAY_SIZE)),
       C_R_BUTTON           => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_4   , C_INPUT_ARRAY_SIZE)),
-      C_Z_BUTTON           => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_7   , C_INPUT_ARRAY_SIZE)),
+      C_Z_BUTTON           => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_0   , C_INPUT_ARRAY_SIZE)),
       C_START_BUTTON       => std_logic_vector(to_unsigned(C_CENTER_BUTTON     , C_INPUT_ARRAY_SIZE)),
       C_LEFT_STICK_UP      => std_logic_vector(to_unsigned(C_WASD_UP           , C_INPUT_ARRAY_SIZE)),
       C_LEFT_STICK_DOWN    => std_logic_vector(to_unsigned(C_WASD_DOWN         , C_INPUT_ARRAY_SIZE)),
@@ -162,7 +162,7 @@ architecture INPUT_HANDLER_1_0_ARCH of INPUT_HANDLER_1_0 is
       C_MOD_X              => std_logic_vector(to_unsigned(C_LEFT_THUMB_MOD_0  , C_INPUT_ARRAY_SIZE)),
       C_MOD_Y              => std_logic_vector(to_unsigned(C_LEFT_THUMB_MOD_1  , C_INPUT_ARRAY_SIZE)),
       C_MOD_TRIG_0         => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_3   , C_INPUT_ARRAY_SIZE)),
-      C_MOD_TRIG_1         => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_0   , C_INPUT_ARRAY_SIZE))
+      C_MOD_TRIG_1         => std_logic_vector(to_unsigned(C_RIGHT_CLUSTER_7   , C_INPUT_ARRAY_SIZE))
       );
 
    signal output_mux_input       : std_logic_vector(C_NUM_INPUTS-1 downto 0);
@@ -190,6 +190,7 @@ architecture INPUT_HANDLER_1_0_ARCH of INPUT_HANDLER_1_0 is
 
 begin
 
+   -- No real need to register these
    O_CENTER_BUTTON      <= center_button;
    O_RIGHT_THUMB_UP     <= right_thumb_up;
    O_RIGHT_THUMB_DOWN   <= right_thumb_down;
@@ -205,6 +206,12 @@ begin
    O_LEFT_THUMB_MOD_1   <= left_thumb_mod_1;
    O_RIGHT_CLUSTER      <= right_cluster;
 
+   
+   -------------------------------------------------------------------------------
+   -- Process     : Input_Registers
+   -- Description : We need to register these guys a couple times since they're 
+   --                coming straight from the IOBs
+   -------------------------------------------------------------------------------
    Input_Registers : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
@@ -248,6 +255,13 @@ begin
       end if;
    end process Input_Registers;
 
+   -------------------------------------------------------------------------------
+   -- Process     : Output_Mux
+   -- Description : Muxes each gamecube controller button to the constant
+   --                conriguration.  In the future this would allow for on the
+   --                fly reconfiguring/different profiles.  Right now its just
+   --                hooked up to a constant.
+   -------------------------------------------------------------------------------
    Output_Mux : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
@@ -257,6 +271,11 @@ begin
       end if;
    end process Output_Mux;
 
+   -------------------------------------------------------------------------------
+   -- Process     : Output_Registers
+   -- Description : Registering the outputs.  Good to do for timings sake after
+   --                the mux.
+   -------------------------------------------------------------------------------
    Output_Registers : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
@@ -281,33 +300,15 @@ begin
          O_MOD_Y              <= output_mux_output(C_MOD_Y           );
          O_MOD_TRIG_0         <= output_mux_output(C_MOD_TRIG_0      );
          O_MOD_TRIG_1         <= output_mux_output(C_MOD_TRIG_1      );
-         -- -- Pass all '1's when
-         -- if (led_config = '1' or control_config = '1') then
-            -- O_A_BUTTON           <= output_mux_output(C_A_BUTTON        );
-            -- O_B_BUTTON           <= output_mux_output(C_B_BUTTON        );
-            -- O_X_BUTTON           <= output_mux_output(C_X_BUTTON        );
-            -- O_Y_BUTTON           <= output_mux_output(C_Y_BUTTON        );
-            -- O_L_BUTTON           <= output_mux_output(C_L_BUTTON        );
-            -- O_R_BUTTON           <= output_mux_output(C_R_BUTTON        );
-            -- O_Z_BUTTON           <= output_mux_output(C_Z_BUTTON        );
-            -- O_START_BUTTON       <= output_mux_output(C_START_BUTTON    );
-            -- O_LEFT_STICK_UP      <= output_mux_output(C_LEFT_STICK_UP   );
-            -- O_LEFT_STICK_DOWN    <= output_mux_output(C_LEFT_STICK_DOWN );
-            -- O_LEFT_STICK_LEFT    <= output_mux_output(C_LEFT_STICK_LEFT );
-            -- O_LEFT_STICK_RIGHT   <= output_mux_output(C_LEFT_STICK_RIGHT);
-            -- O_C_STICK_UP         <= output_mux_output(C_C_STICK_UP      );
-            -- O_C_STICK_DOWN       <= output_mux_output(C_C_STICK_DOWN    );
-            -- O_C_STICK_LEFT       <= output_mux_output(C_C_STICK_LEFT    );
-            -- O_C_STICK_RIGHT      <= output_mux_output(C_C_STICK_RIGHT   );
-            -- O_MOD_TILT           <= output_mux_output(C_MOD_TILT        );
-            -- O_MOD_X              <= output_mux_output(C_MOD_X           );
-            -- O_MOD_Y              <= output_mux_output(C_MOD_Y           );
-            -- O_MOD_TRIG_0         <= output_mux_output(C_MOD_TRIG_0      );
-            -- O_MOD_TRIG_1         <= output_mux_output(C_MOD_TRIG_1      );
-         -- end if;
       end if;
    end process Output_Registers;
 
+   -------------------------------------------------------------------------------
+   -- Process     : Config_Mode_Watchdog
+   -- Description : Watchdog that looks for a couple of key combos to go into
+   --                the super secret configuration modes...  Only LED mode is
+   --                programmed in for now.
+   -------------------------------------------------------------------------------
    Config_Mode_Watchdog : process(I_CLK)
    begin
       if rising_edge(I_CLK) then

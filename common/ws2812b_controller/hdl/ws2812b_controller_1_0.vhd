@@ -43,6 +43,12 @@ architecture WS2812B_CONTROLLER_1_0_ARCH of WS2812B_CONTROLLER_1_0 is
 
 begin
 
+   -------------------------------------------------------------------------------
+   -- Process     : Send_Colors
+   -- Description : Sends the input color to the LED chain.  Will send out
+   --                G_NUM_LEDS 24 bit values, one for each LED.  Outputs what
+   --                LED it is currently on.
+   -------------------------------------------------------------------------------
    Send_Colors : process(I_CLK)
    begin
       if rising_edge(I_CLK) then
